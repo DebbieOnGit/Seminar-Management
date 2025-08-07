@@ -16,6 +16,15 @@ page 50015 "Seminar Registration Line"
                 field("Bill-to Customer No."; Rec."Bill-to Customer No.")
                 {
                     ToolTip = 'Specifies the value of the Bill-to Customer No. field.', Comment = '%';
+                    trigger OnValidate()
+                    var
+                        SeminarRegHeader: Record "Seminar Registration Header";
+                    begin
+                        if SeminarRegHeader.Get(Rec."Document No.") then
+                            if SeminarRegHeader.Status <> SeminarRegHeader.Status::Registration then
+                                Error('You cannot register participants when the seminar is not in the Registration status.');
+                            
+                    end;
                 }
                 field("Participant Contact No."; Rec."Participant Contact No.")
                 {
@@ -41,13 +50,14 @@ page 50015 "Seminar Registration Line"
                 {
                     ToolTip = 'Specifies the value of the Registered field.', Comment = '%';
                 }
-                field(Participated; Rec.Participated)
-                {
-                    ToolTip = 'Specifies the value of the Participated field.', Comment = '%';
-                }
+                // field(Participated; Rec.Participated)
+                // {
+                //     ToolTip = 'Specifies the value of the Participated field.', Comment = '%';
+                // }
                 field("Seminar Price"; Rec."Seminar Price")
                 {
                     ToolTip = 'Specifies the value of the Seminar Price field.', Comment = '%';
+                    Editable = false;
                 }
                 field("Line Discount %"; Rec."Line Discount %")
                 {

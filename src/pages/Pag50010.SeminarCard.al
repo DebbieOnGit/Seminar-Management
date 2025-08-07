@@ -4,6 +4,7 @@ page 50010 "Seminar Card"
     Caption = 'Seminar Card';
     PageType = Card;
     SourceTable = Seminar;
+    PromotedActionCategories = 'New, Process';
 
 
     layout
@@ -14,10 +15,11 @@ page 50010 "Seminar Card"
             {
                 Caption = 'General';
 
-                field("No."; Rec."No.") 
+                field("No."; Rec."No.")
                 {
                     ToolTip = 'Specifies the value of the No. field.', Comment = '%';
                     Editable = false;
+                    ShowMandatory = true;
                     // Importance = Standard;
                     trigger OnAssistEdit()
 
@@ -29,6 +31,7 @@ page 50010 "Seminar Card"
                 field(Name; Rec.Name)
                 {
                     ToolTip = 'Specifies the value of the Name field.', Comment = '%';
+                    ShowMandatory = true;
                 }
                 field("Seminar Duration"; Rec."Seminar Duration")
                 {
@@ -41,6 +44,7 @@ page 50010 "Seminar Card"
                 field("Maximum Participants"; Rec."Maximum Participants")
                 {
                     ToolTip = 'Specifies the value of the Maximum Participants field.', Comment = '%';
+                    ShowMandatory = true;
                 }
                 field("Search Name"; Rec."Search Name")
                 {
@@ -70,6 +74,7 @@ page 50010 "Seminar Card"
                 field("Seminar Price"; Rec."Seminar Price")
                 {
                     ToolTip = 'Specifies the value of the Seminar Price field.', Comment = '%';
+                    ShowMandatory = true;
                 }
             }
         }
@@ -93,10 +98,24 @@ page 50010 "Seminar Card"
             {
                 ApplicationArea = All;
                 Caption = 'Setup';
+                Promoted = true;
+                PromotedCategory = Process;
                 Image = Setup;
                 RunObject = Page "Seminar Setup Page";
                 ToolTip = 'Open the seminar setup page.';
 
+            }
+
+            action(Registration)
+            {
+                ApplicationArea = All;
+                Caption = 'Register';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = RegisteredDocs;
+                RunObject = Page "Seminar Registration Page";
+                RunPageMode = Create;
+                ToolTip = 'Open the Registration page to add participants to this seminar';
             }
 
 

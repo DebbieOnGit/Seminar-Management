@@ -5,6 +5,7 @@ page 50021 "Posted Seminar Reg. Page"
     PageType = Document;
     SourceTable = "Posted Seminar Reg. Header";
     Editable = false;
+    PromotedActionCategories = 'New, Process, Report, Comments, Charges';
     
     layout
     {
@@ -57,10 +58,6 @@ page 50021 "Posted Seminar Reg. Page"
                 field("Posting Date"; Rec."Posting Date")
                 {
                     ToolTip = 'Specifies the value of the Posting Date field.', Comment = '%';
-                }
-                field("Document Date"; Rec."Document Date")
-                {
-                    ToolTip = 'Specifies the value of the Document Date field.', Comment = '%';
                 }
                 field("User ID"; Rec."User ID")
                 {
@@ -117,7 +114,7 @@ page 50021 "Posted Seminar Reg. Page"
             // part(CustomerDetails; "Customer Details FactBox")
             // {
             //     ApplicationArea = All;
-            //     SubPageLink = "No." = field(Bill)
+            //     SubPageLink = "No." = field("Bill-to Customer No.");
             // }
 
             systempart(RecordLinks; Links)
@@ -136,25 +133,34 @@ page 50021 "Posted Seminar Reg. Page"
     {
         area(Navigation)
         {
-            group("Seminar Registration")
+            group("Comments")
             {
-                action("Comments")
+                action("Comment")
                 {
                     ApplicationArea = All;
                     Caption = 'Comments';
                     Image = Comment;
-                    RunObject = page "Seminar Comment Line";
-                    RunPageLink = "No." = field("No.");
+                    Promoted = true;
+                    PromotedCategory = Category4;
+                    RunObject = page "Seminar Comment List";
+                    RunPageLink = "Document No." = field("No.");
                     RunPageView = where("Document Type" = const("Posted Seminar Registration"));
                 }
 
-                action("Charges")
+                
+            }
+            group(Charges)
+            {
+                action("Charge")
                 {
                     ApplicationArea = All;
                     Caption = 'Charges';
                     Image = Cost;
-                    RunObject = page "Seminar Charges";
+                    Promoted = true;
+                    PromotedCategory = Category5;
+                    RunObject = page "Posted Seminar Charges";
                     RunPageLink = "Document No." = field("No.");
+                    RunPageMode = View;
 
                 }
             }

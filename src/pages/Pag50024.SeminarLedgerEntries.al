@@ -4,7 +4,7 @@ page 50024 "Seminar Ledger Entries"
     Caption = 'Seminar Ledger Entries';
     PageType = List;
     SourceTable = "Seminar Ledger Entry";
-    UsageCategory = History;
+    UsageCategory = Administration;
     
     layout
     {
@@ -60,10 +60,10 @@ page 50024 "Seminar Ledger Entries"
                 // {
                 //     ToolTip = 'Specifies the value of the Charge Type field.', Comment = '%';
                 // }
-                field("Res. Ledger Entry No."; Rec."Res. Ledger Entry No.")
-                {
-                    ToolTip = 'Specifies the value of the Res. Ledger Entry No. field.', Comment = '%';
-                }
+                // field("Res. Ledger Entry No."; Rec."Res. Ledger Entry No.")
+                // {
+                //     ToolTip = 'Specifies the value of the Res. Ledger Entry No. field.', Comment = '%';
+                // }
                 field("Source No."; Rec."Source No.")
                 {
                     ToolTip = 'Specifies the value of the Source No. field.', Comment = '%';
@@ -88,10 +88,10 @@ page 50024 "Seminar Ledger Entries"
                 {
                     ToolTip = 'Specifies the value of the Total Price field.', Comment = '%';
                 }
-                field("Journal Batch Name"; Rec."Journal Batch Name")
-                {
-                    ToolTip = 'Specifies the value of the Journal Batch Name field.', Comment = '%';
-                }
+                // field("Journal Batch Name"; Rec."Journal Batch Name")
+                // {
+                //     ToolTip = 'Specifies the value of the Journal Batch Name field.', Comment = '%';
+                // }
                 field(Description; Rec.Description)
                 {
                     ToolTip = 'Specifies the value of the Description field.', Comment = '%';

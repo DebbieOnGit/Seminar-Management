@@ -16,6 +16,14 @@ page 50018 "Seminar Comment Line"
         {
             repeater(General)
             {
+                field( "Document Type"; Rec."Document Type")
+                {
+                    ToolTip = 'Specifies the value of the Document Type field';
+                }
+                field("Document No."; Rec."Document No.")
+                {
+                    ToolTip = 'Specifies the value of the Document No. field';
+                }
                 field(Comment; Rec.Comment)
                 {
                     ToolTip = 'Specifies the value of the Comment field.', Comment = '%';
@@ -24,10 +32,7 @@ page 50018 "Seminar Comment Line"
                 {
                     ToolTip = 'Specifies the value of the Date field.', Comment = '%';
                 }
-                field("Code"; Rec."Code")
-                {
-                    ToolTip = 'Specifies the value of the Code field.', Comment = '%';
-                }
+                
             }
         }
     }

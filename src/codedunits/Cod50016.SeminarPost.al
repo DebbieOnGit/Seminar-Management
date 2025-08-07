@@ -11,6 +11,10 @@ codeunit 50016 "Seminar-Post"
         SeminarSetup: Record "Seminar Setup";
         SourceCodeSetup: Record "Source Code Setup";
         SeminarLedgerEntry: Record "Seminar Ledger Entry";
+        SeminarCharge: Record "Seminar Charge";
+        PostedCharge: Record "Posted Seminar Charges";
+        CommentLine: Record "Seminar Comment Line";
+        PostedCommentLine: Record "Seminar Comment Line";
 
     begin
         SeminarHeader.TestField(Status, SeminarHeader.Status::Closed);
@@ -31,6 +35,7 @@ codeunit 50016 "Seminar-Post"
         PostedHeader."No. Series" := SeminarSetup."Posted Seminar Reg. Nos.";
         PostedHeader."Source Code" := SourceCodeSetup.Seminar;
         PostedHeader."User ID" := UserId;
+        PostedHeader."Posting Date" := Today();
         PostedHeader.Insert(true);
 
         //Copy Lines
@@ -58,8 +63,38 @@ codeunit 50016 "Seminar-Post"
                     );
                 end;
             until SeminarLine.Next() = 0;
-            Message('Seminar Registation %1 has been posted successfully.');
+
         end;
+
+        // Insert comments into posted registration
+        CommentLine.SetRange("Document Type", CommentLine."Document Type"::"Seminar Registration");
+        CommentLine.SetRange("Document No.", SeminarHeader."No.");
+            if CommentLine.FindFirst() then begin
+                repeat
+                    PostedCommentLine.Init();
+                    PostedCommentLine."Document Type" := CommentLine."Document Type"::"Posted Seminar Registration";
+                    PostedCommentLine."Document No." := PostedHeader."No.";
+                    PostedCommentLine.Comment := CommentLine.Comment;
+                    PostedCommentLine.Insert();
+                until CommentLine.Next() = 0;
+            end;
+
+        // Post Seminar Charges
+        SeminarCharge.SetRange("Document No.", SeminarHeader."No.");
+        if SeminarCharge.FindSet() then
+            repeat
+                PostedCharge.Init();
+                PostedCharge.TransferFields(SeminarCharge, true, true);
+                PostedCharge."Document No." := PostedHeader."No.";
+                PostedCharge.Insert();
+            until SeminarCharge.Next() = 0;
+
+        // Delete Seminar Registration Lines
+        SeminarHeader.Delete(true);
+        SeminarLine.SetRange("Document No.", SeminarHeader."No.");
+        SeminarLine.DeleteAll(true);
+
+        
     end;
 
     procedure InsertLedgerEntry(
@@ -88,7 +123,7 @@ codeunit 50016 "Seminar-Post"
         LedgerEntry."Entry No." := GetNextEntryNo();
         LedgerEntry."Seminar No." := SeminarNo;
         LedgerEntry."Seminar Registration No." := RegNo;
-        LedgerEntry."Posting Date" := WorkDate();
+        LedgerEntry."Posting Date" := Today();
         LedgerEntry."Document Date" := WorkDate();
         LedgerEntry."Document No." := RegNo;
         LedgerEntry."Entry Type" := EntryType;

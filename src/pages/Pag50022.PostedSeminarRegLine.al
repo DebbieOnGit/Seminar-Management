@@ -28,10 +28,10 @@ page 50022 "Posted Seminar Reg. Line"
                 {
                     ToolTip = 'Specifies the value of the Registration Date field.', Comment = '%';
                 }
-                field(Participated; Rec.Participated)
-                {
-                    ToolTip = 'Specifies the value of the Participated field.', Comment = '%';
-                }
+                // field(Participated; Rec.Participated)
+                // {
+                //     ToolTip = 'Specifies the value of the Participated field.', Comment = '%';
+                // }
                 field("To invoice"; Rec."To invoice")
                 {
                     ToolTip = 'Specifies the value of the To invoice field.', Comment = '%';

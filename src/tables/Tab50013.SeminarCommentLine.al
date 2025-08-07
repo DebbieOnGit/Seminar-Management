@@ -9,13 +9,13 @@ table 50013 "Seminar Comment Line"
         field(1; "Document Type"; Enum "Seminar Comment Doc Type")
         {
             Caption = 'Document Type';
-            
-            TableRelation = Seminar;
+            Editable = false;
         }
-        field(2; "No."; Code[20])
+        field(2; "Document No."; Code[20])
         {
-            Caption = 'No.';
-            TableRelation = Seminar;
+            Caption = 'Document No.';
+            TableRelation = if ("Document Type" = const("Seminar Registration")) "Seminar Registration Header" else if ("Document Type" = const("Posted Seminar Registration")) "Posted Seminar Reg. Header";
+            Editable = false;
         }
         field(3; "Line No."; Integer)
         {
@@ -28,15 +28,18 @@ table 50013 "Seminar Comment Line"
         field(5; Date; Date)
         {
             Caption = 'Date';
+            
         }
-        field(6; Code; Code[20])
+        field(6; "Seminar Name"; Text[100])
         {
-            Caption = 'Code';
+            Caption = 'Seminar Name';
+            TableRelation = if ("Document Type" = const("Seminar Registration")) "Seminar Registration Header" else if ("Document Type" = const("Posted Seminar Registration")) "Posted Seminar Reg. Header";
         }
+        
     }
     keys
     {
-        key(PK; "Document Type", "No.", "Line No.")
+        key(PK; "Document No.", "Line No.")
         {
             Clustered = true;
         }
@@ -44,9 +47,18 @@ table 50013 "Seminar Comment Line"
 
     trigger OnInsert()
     var
-        SeminarRec: Record Seminar;
+        SeminarRegheader: Record "Seminar Registration Header";
+        PostedReg: Record "Posted Seminar Reg. Header";
     begin
-        if not SeminarRec.Get("No.") then
-            Error('Seminar does not exist. Cannot add comment');
+        case "Document Type" of
+            "Document Type"::"Seminar Registration":
+                if not SeminarRegheader.Get("Document No.") then
+                    Error('Seminar Registration does not exist');
+            "Document Type"::"Posted Seminar Registration":
+                if not PostedReg.Get("Document No.") then
+                    Error('Posted Seminar Registration does not exist');
+
+        end;
+        Date := Today();
     end;
 }

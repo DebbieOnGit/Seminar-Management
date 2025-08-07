@@ -88,10 +88,6 @@ table 50015 "Posted Seminar Reg. Header"
         {
             Caption = 'Posting Date';
         }
-        field(20; "Document Date"; Date)
-        {
-            Caption = 'Document Date'; 
-        }
         field(21; "No. Series"; Code[20])
         {
             Caption = 'No. Series';
@@ -107,6 +103,7 @@ table 50015 "Posted Seminar Reg. Header"
             TableRelation = "Source Code";
             Editable = false;
         }
+        
     }
     keys
     {
@@ -119,4 +116,5 @@ table 50015 "Posted Seminar Reg. Header"
             SumIndexFields = Duration;
         }
     }
+
 }

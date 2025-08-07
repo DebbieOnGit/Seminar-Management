@@ -5,7 +5,7 @@ table 50012 "Seminar Registration Line"
     LookupPageId = "Seminar Registration Line";
     DrillDownPageId = "Seminar Registration Line";
 
-   // TODO: Round off using  GLSetup instead of hard coding
+    // TODO: Round off using  GLSetup instead of hard coding
 
     fields
     {
@@ -13,35 +13,45 @@ table 50012 "Seminar Registration Line"
         {
             Caption = 'Document No.';
             TableRelation = "Seminar Registration Header";
+
         }
         field(2; "Line No."; Integer)
         {
             Caption = 'Line No.';
-        
+
+            trigger OnValidate()
+
+            begin
+                if "Line No." = xRec."Line No."
+                then
+                    exit;
+                "Seminar Price" := SeminarRegHeader."Price";
+            end;
+
         }
         field(3; "Bill-to Customer No."; Code[20])
         {
             Caption = 'Bill-to Customer No.';
             TableRelation = Customer where(Blocked = const(" "));
 
-            
+
         }
         field(4; "Participant Contact No."; Code[20])
         {
             Caption = 'Participant Contact No.';
             TableRelation = Contact where(Type = const(Person));
-            
+
 
             trigger OnValidate()
             begin
                 // if not Contact.Get("Participant Contact No.")then
                 //     Error('Contact %1 does not exist', "Participant Contact No.");
-                ValidateParticipantContact();        
-                
+                ValidateParticipantContact();
+
             end;
 
             trigger OnLookup()
-            
+
             begin
                 LookUpParticipantContact();
 
@@ -70,19 +80,20 @@ table 50012 "Seminar Registration Line"
             Caption = 'To invoice';
             InitValue = true;
         }
-        field(8; Participated;Boolean)
-        {
-            Caption = 'Participated';
-            InitValue = false;
-        }
+        // field(8; Participated; Boolean)
+        // {
+        //     Caption = 'Participated';
+        //     InitValue = false;
+        // }
         field(9; "Seminar Price"; Decimal)
         {
-            Caption = 'Seminar Price';
+            Caption = 'Price';
             AutoFormatType = 2;
 
             trigger OnValidate()
-            
+
             begin
+
                 Validate("Line Discount %");
             end;
         }
@@ -91,16 +102,14 @@ table 50012 "Seminar Registration Line"
             Caption = 'Line Discount %';
             MinValue = 0;
             MaxValue = 100;
-            DecimalPlaces = 0:4;
+            DecimalPlaces = 0 : 4;
 
             trigger OnValidate()
-            
+
             begin
-                if "Seminar Price" = 0 then begin
-                    "Line Discount Amount" := 0;
-                end else begin 
-                    "Line Discount Amount" := Round("Line Discount %" * "Seminar Price" * 0.01, 0.0001);
-                end;
+                
+                "Line Discount Amount" := Round("Line Discount %" * SeminarRegHeader.Price * 0.01, GLSetup."Amount Rounding Precision"); 
+                
                 UpdateAmount();
             end;
         }
@@ -108,14 +117,12 @@ table 50012 "Seminar Registration Line"
         {
             Caption = 'Line Discount Amount';
             trigger OnValidate()
-            
+
             begin
-                if "Seminar Price" = 0 then begin
-                    "Line Discount %" := 0;
-                end else begin
-                    "Line Discount Amount" := "Seminar Price" - Amount;
-                    "Line Discount %" := Round("Line Discount Amount" / "Seminar Price" * 100, 0.01);
-                end;
+                
+                "Line Discount Amount" := SeminarRegHeader.Price - Amount;
+                "Line Discount %" := Round("Line Discount Amount" / "Seminar Price" * 100, 0.01);
+                
                 UpdateAmount();
             end;
         }
@@ -124,28 +131,34 @@ table 50012 "Seminar Registration Line"
             Caption = 'Amount';
 
             trigger OnValidate()
-            
+
             begin
                 TestField("Bill-to Customer No.");
-                TestField("Seminar Price");
-                Amount := Round(Amount, 0.0001);
-                if "Seminar Price" = 0 then begin
-                    "Line Discount %" := 0;
-                    "Line Discount Amount" := 0;
-                end else begin
-                    "Line Discount %" := Round("Line Discount Amount" / "Seminar Price" * 100, 0.01);
-                end;
+                
+                Amount := Round(Amount, GLSetup."Amount Rounding Precision");
+                
+                "Line Discount %" := Round("Line Discount Amount" / SeminarRegHeader.Price * 100, 0.01);
+                
+                UpdateAmount();
             end;
         }
         field(13; Registered; Boolean)
         {
             Caption = 'Registered';
             Editable = false;
+            InitValue = false;
+
+        }
+        field(14; Invoiced; Boolean)
+        {
+            Caption = 'Invoiced';
+            Editable = false;
+            InitValue = false;
         }
     }
     keys
     {
-        key(PK; "Document No.","Line No.")
+        key(PK; "Document No.", "Line No.")
         {
             Clustered = true;
         }
@@ -156,58 +169,51 @@ table 50012 "Seminar Registration Line"
         Contact: Record Contact;
         ContactBusinessRelation: Record "Contact Business Relation";
         ContactList: Page "Contact List";
+        GLSetup: Record "General Ledger Setup";
 
     trigger OnInsert()
-   
+
     begin
         if SeminarRegHeader."No." <> "Document No." then
             SeminarRegHeader.Get("Document No.");
 
         if SeminarRegHeader.Status <> SeminarRegHeader.Status::Registration then
             Error('Participants can only be added when the seminar registration is in registration status.');
-    
-        "Registration Date" := WorkDate();    
-        "Seminar Price" := SeminarRegHeader."Price";
-        Amount := SeminarRegHeader."Price" ;
-        
+
+        Rec."Registration Date" := Today;
+        Rec."Seminar Price" := SeminarRegHeader."Price";
+        //Amount := SeminarRegHeader."Price";
+
     end;
 
     trigger OnDelete()
-    
+
     begin
         TestField(Registered, false);
     end;
 
 
+    /// <summary>
+    /// UpdateAmount.
+    /// This procedure updates the Amount that should be paid for a seminar after a discount.
+    /// </summary>
     procedure UpdateAmount()
 
     begin
-        Amount:= Round("Seminar Price" - "Line Discount Amount", 0.0001);
+        Amount := Round("Seminar Price" - "Line Discount Amount", 0.0001);
     end;
 
-    // procedure ValidateParticipantContact()
-    // var
-    //     CompanyContactNo: Code[20];
-    // begin
-    //     if not ShouldValidateParticipantContact() then
-    //         exit;
-    //     if not Contact.Get("Participant Contact No.") then
-    //         Error('Contact %1 does not exist.', "Participant Contact No.");
-        
-    //     CompanyContactNo := GetBillToCustomerCompanyContact();
-    //     if CompanyContactNo = '' then
-    //         Error('Bill-to Customer %1 does not have a company contact.', "Bill-to Customer No.");
-    //         exit;
-        
-    //     if not ContactBusinessRelation.Get(Contact.Type::Company, CompanyContactNo, Contact."No.") then
-    //         Error('The contact %1 is not linked to the company contact %2.', Contact."No.", CompanyContactNo);
-    // end;
 
+    /// <summary>
+    /// ValidateParticipantContact.
+    /// This procedure checks if the "Participant Contact No." is not empty and retrieves the contact's name.
+    /// If the contact does not exist, it raises an error.
+    /// </summary>
     procedure ValidateParticipantContact()
     begin
         if "Participant Contact No." <> '' then begin
             if not Contact.Get("Participant Contact No.") then
-            Error('The selected participant contact does not exist');
+                Error('The selected participant contact does not exist');
 
             "Participant Name" := Contact.Name;
 
@@ -215,51 +221,18 @@ table 50012 "Seminar Registration Line"
             "Participant Name" := '';
     end;
 
-    procedure ShouldValidateParticipantContact(): Boolean
-    begin
-        exit(("Bill-to Customer No." <> '') and
-             ("Participant Contact No." <> ''));
-    end;
 
-    procedure GetBillToCustomerCompanyContact(): Code[20]
-
-    begin
-        ContactBusinessRelation.SetRange("Link to Table", ContactBusinessRelation."Link to Table"::Customer);
-        ContactBusinessRelation.SetRange("No.", "Bill-to Customer No.");
-        if ContactBusinessRelation.FindFirst() then
-            exit(ContactBusinessRelation."Contact No.");
-    end;
-
-    // procedure LookUpParticipantContact()
-    // var
-    //     CompanyContactNo: Code[20];
-
-    // begin
-    //     if "Bill-to Customer No." = '' then
-    //         Message('Bill-to Customer No. must be specified before selecting a participant contact.');
-    //         exit;
-    //     CompanyContactNo := GetBillToCustomerCompanyContact();
-    //     if CompanyContactNo = '' then begin
-    //         Message('Bill-to Customer %1 does not have a company contact.', "Bill-to Customer No.");
-    //         exit;
-    //     end;
-
-    //     Contact.Reset();
-    //     Contact.SetRange("Company No.", CompanyContactNo);
-    //     Contact.SetRange(Type, Contact.Type::Person);
-    //     ContactList.SetTableView(Contact);
-    //     ContactList.LookupMode := true;
-    //     if ContactList.RunModal() = Action::LookupOK then begin
-    //         ContactList.GetRecord(Contact);
-    //         Validate("Participant Contact No.", Contact."No.");
-    //     end;
-    // end;
-
+    /// <summary>
+    /// LookUpParticipantContact.
+    /// This procedure opens a lookup page for selecting a participant contact.
+    /// It filters the contacts to only show those of type Person.
+    /// </summary>
     procedure LookUpParticipantContact()
     begin
         Contact.Reset();
         Contact.SetRange(Type, Contact.Type::Person);
         if Page.RunModal(Page::"Contact List", Contact) = Action::LookupOK then
-        Validate("Participant Contact No.", Contact."No.");
+            Validate("Participant Contact No.", Contact."No.");
     end;
+
 }

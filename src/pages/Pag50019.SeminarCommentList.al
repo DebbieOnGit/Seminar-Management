@@ -1,10 +1,10 @@
 page 50019 "Seminar Comment List"
 {
     ApplicationArea = All;
-    Caption = 'Seminar Comment List';
+    Caption = 'Seminar Comments';
     PageType = List;
     SourceTable = "Seminar Comment Line";
-    UsageCategory = None;
+    UsageCategory = Lists;
     Editable = false;
     LinksAllowed = false;
     
@@ -14,9 +14,13 @@ page 50019 "Seminar Comment List"
         {
             repeater(General)
             {
-                field("No."; Rec."No.")
+                field("Document No."; Rec."Document No.")
                 {
                     ToolTip = 'Specifies the value of the No. field.', Comment = '%';
+                }
+                field("Seminar Name"; Rec."Seminar Name")
+                {
+                    ToolTip = 'Specifies the value of the Seminar Name field.', Comment = '%';
                 }
                 field(Comment; Rec.Comment)
                 {
@@ -26,10 +30,7 @@ page 50019 "Seminar Comment List"
                 {
                     ToolTip = 'Specifies the value of the Date field.', Comment = '%';
                 }
-                field("Code"; Rec."Code")
-                {
-                    ToolTip = 'Specifies the value of the Code field.', Comment = '%';
-                }
+                
             }
         }
     }

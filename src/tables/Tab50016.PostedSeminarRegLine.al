@@ -33,10 +33,10 @@ table 50016 "Posted Seminar Reg Line"
         {
             Caption = 'To invoice';
         }
-        field(8; Participated; Boolean)
-        {
-            Caption = 'Participated';
-        }
+        // field(8; Participated; Boolean)
+        // {
+        //     Caption = 'Participated';
+        // }
         field(9; "Seminar Price"; Decimal)
         {
             Caption = 'Seminar Price';

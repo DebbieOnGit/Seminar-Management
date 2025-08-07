@@ -33,34 +33,27 @@ table 50014 "Seminar Charge"
         field(6; "Quantity"; Decimal)
         {
             Caption = 'Quantity';
+            trigger OnValidate()
+
+            begin
+                "Total Amount" := "Unit Price" * "Quantity";
+            end;
         }
         field(7; "Total Amount"; Decimal)
         {
             Caption = 'Total Amount';
+
         }
-        field(8; "Posting Date"; Date)
+        field(8; Description; Text[100])
         {
-            Caption = 'Posting Date';
+            Caption = 'Description';
         }
         field(9; "G/L Account No."; Code[20])
         {
             Caption = 'G/L Account No.';
             TableRelation = "General Ledger Setup";
         }
-        field(10; "Bill-to Customer No."; Code[20])
-        {
-            Caption = 'Bill-to Customer Number';
-            TableRelation = Customer;
-        }
-        field(11; Registered; Boolean)
-        {
-            Caption = 'Registered';
-            Editable = false;
-        }
-        field(12; "To Invoice"; Boolean)
-        {
-            Caption = 'To invoice';
-        }
+        
     }
     keys
     {
@@ -77,10 +70,5 @@ table 50014 "Seminar Charge"
             Error('Seminar registration does not exist. Cannot add charge.');
     end;
 
-    trigger OnDelete()
-
-    begin
-        TestField(Registered, false);
-    end;
 
 }

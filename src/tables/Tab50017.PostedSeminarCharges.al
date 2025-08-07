@@ -34,26 +34,16 @@ table 50017 "Posted Seminar Charges"
         {
             Caption = 'Total Amount';
         }
-        field(8; "Posting Date"; Date)
+        field(8; Description; Text[100])
         {
-            Caption = 'Posting Date';
+            Caption = 'Description';
+            
         }
         field(9; "G/L Account No."; Decimal)
         {
             Caption = 'G/L Account No.';
         }
-        field(10; "Bill-to Customer No."; Code[20])
-        {
-            Caption = 'Bill-to Customer No.';
-        }
-        field(11; Registered; Boolean)
-        {
-            Caption = 'Registered';
-        }
-        field(12; "To invoice"; Boolean)
-        {
-            Caption = 'To invoice';
-        }
+        
     }
     keys
     {

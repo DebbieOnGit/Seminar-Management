@@ -3,7 +3,7 @@ table 50011 "Seminar Registration Header"
     Caption = 'Seminar Registration Header';
     DataClassification = ToBeClassified;
     LookupPageId = "Seminar Registration List";
-    
+
     fields
     {
         field(1; "No."; Code[20])
@@ -11,7 +11,7 @@ table 50011 "Seminar Registration Header"
             Caption = 'No.';
 
             trigger OnValidate()
-            
+
             begin
                 if "No." <> xRec."No." then begin
                     GetSeminarSetup();
@@ -26,14 +26,15 @@ table 50011 "Seminar Registration Header"
             TableRelation = "No. Series";
             Editable = false;
         }
-       
+
         field(2; "Seminar No."; Code[20])
         {
             Caption = 'Seminar No.';
             TableRelation = Seminar where(Blocked = const(false));
+            NotBlank = true;
 
             trigger OnValidate()
-            
+
             begin
                 if "Seminar No." = xRec."Seminar No." then
                     exit;
@@ -43,7 +44,7 @@ table 50011 "Seminar Registration Header"
                 Seminar.TestField("Gen. Prod. Posting Group");
                 Seminar.TestField("VAT Prod. Posting Group");
                 "Seminar Name" := Seminar.Name;
-                Duration := Seminar."Seminar Duration";    
+                Duration := Seminar."Seminar Duration";
                 Price := Seminar."Seminar Price";
                 "Gen. Prod. Posting Group" := Seminar."Gen. Prod. Posting Group";
                 "VAT Prod. Posting Group" := Seminar."VAT Prod. Posting Group";
@@ -78,15 +79,17 @@ table 50011 "Seminar Registration Header"
 
                 if (SeminarRoom."Maximum Participants" <> 0) and
                    (SeminarRoom."Maximum Participants" < "Maximum Participants") then
-                    Error('The maximum number of participants in the room is %1, which is less than the maximum number of participants in the seminar.', SeminarRoom."Maximum Participants");
-                    "Maximum Participants" := SeminarRoom."Maximum Participants";
-                
+                    Error('The maximum number of participants in the seminar is %1, which is more than the maximum number of participants in the room. The room chosen cannot hold this capacity.', Seminar."Maximum Participants");
+                "Maximum Participants" := SeminarRoom."Maximum Participants";
+
+                CheckRoomAvailability();
+
             end;
         }
         field(5; "Room Name"; Text[100])
         {
             Caption = 'Room Name';
-            
+
         }
         field(6; "Room Address"; Text[100])
         {
@@ -116,23 +119,27 @@ table 50011 "Seminar Registration Header"
         field(9; "Starting Date"; Date)
         {
             Caption = 'Starting Date';
+            NotBlank = true;
 
             trigger OnValidate()
-            
+
             begin
                 if "Starting Date" <> xRec."Starting Date" then
-                TestField(Status, Status::Planning);
+                    TestField(Status, Status::Planning);
+                if "Starting Date" < Today() then
+                    Error('Starting Date cannot be earlier than today.');
             end;
         }
         field(10; "Ending Date"; Date)
         {
             Caption = 'Ending Date';
+            NotBlank = true;
 
             trigger OnValidate()
             var
                 Today: Date;
             begin
-                Today:= Today();
+                Today := Today();
                 if Rec."Ending Date" < Rec."Starting Date" then
                     Error('Ending Date cannot be earlier than Starting Date.');
                 // if Rec."Ending Date" < Today then
@@ -152,23 +159,23 @@ table 50011 "Seminar Registration Header"
             Caption = 'Price';
             //TableRelation 
         }
-        
-        field(14; "Gen. Prod. Posting Group" ; Code[20])
+
+        field(14; "Gen. Prod. Posting Group"; Code[20])
         {
             Caption = 'Gen. Prod. Posting Group';
             TableRelation = "Gen. Product Posting Group";
-            
+
         }
         field(15; "VAT Prod. Posting Group"; Code[20])
         {
             Caption = 'VAT Prod. Posting Group';
             TableRelation = "VAT Product Posting Group";
-            
+
         }
         field(16; Duration; Integer)
         {
             Caption = 'Duration';
-            
+
         }
         field(17; Blocked; Boolean)
         {
@@ -182,8 +189,21 @@ table 50011 "Seminar Registration Header"
         {
             Caption = 'Status';
             Editable = false;
+
+            // Reset to remove previous filters, then set registered as true
+            // so all lines are registered when a seminar registration is closed 
+            trigger OnValidate()
+            var
+                SeminarRegLine: Record "Seminar Registration Line";
+            begin
+                if Status in [Status::Closed] then begin
+                    SeminarRegLine.Reset();
+                    SeminarRegLine.SetRange("Document No.", "No.");
+                    SeminarRegLine.ModifyAll(Registered, true);
+                end
+            end;
         }
-        
+
     }
     keys
     {
@@ -203,9 +223,11 @@ table 50011 "Seminar Registration Header"
         CannotDeleteWithChargesErr: Label 'Cannot delete registration with charges. Please remove the charges first.';
 
     trigger OnModify()
-    
+
     begin
-        "Last Date Modified" := Today;
+        "Last Date Modified" := Today();
+        if Status in [Status::Cancelled, Status::Closed] then
+            Error('You cannot modify a seminar registration that is cancelled or closed.');
     end;
 
     trigger OnInsert()
@@ -221,7 +243,7 @@ table 50011 "Seminar Registration Header"
     end;
 
     trigger OnDelete()
-    
+
     begin
         // Delete all lines related to this header and are registered
         TestField(Status, Status::Cancelled);
@@ -235,11 +257,21 @@ table 50011 "Seminar Registration Header"
                   SeminarRegLine.FieldCaption(Registered),
                   Format(true));
         // call procedure to validate that lines being deleted do not have charges          
-        ValidateNoCharges(); 
-        DeleteRelatedRecords();         
+        ValidateNoCharges();
+        DeleteRelatedRecords();
     end;
 
-    procedure AssistEdit (OldReg: Record "Seminar Registration Header"): Boolean
+    /// <summary>
+    /// AssistEdit.
+    /// This procedure is used to assist in editing the seminar registration header.
+    /// It checks if the No. Series is related to the Seminar Registration Nos. and updates
+    /// the No. Series and No. fields accordingly.
+    /// If the No. Series is not related, it returns false.
+    /// </summary>
+    /// <param name="OldReg">The old seminar registration header record.</param>
+    /// <returns>True if the No. Series is related and updated, otherwise false.</returns>
+
+    procedure AssistEdit(OldReg: Record "Seminar Registration Header"): Boolean
     var
         NewReg: Record "Seminar Registration Header";
     begin
@@ -250,11 +282,19 @@ table 50011 "Seminar Registration Header"
         if NoSeries.LookupRelatedNoSeries(SeminarSetup."Seminar Registration Nos.", OldReg."No. Series", NewReg."No. Series") then begin
             NewReg."No." := NoSeries.GetNextNo(NewReg."No. Series", WorkDate());
             Rec := NewReg;
-            
+
             exit(true);
         end;
         exit(false);
     end;
+
+    /// <summary>
+    /// GetSeminarSetup.
+    /// This procedure retrieves the Seminar Setup record.
+    /// It checks if the setup has already been read to avoid unnecessary database calls.
+    /// If the setup has not been read, it retrieves the record and sets the SetupRead flag to true.
+    /// This is used to ensure that the Seminar Setup is available for operations related to seminar registrations
+    /// </summary>
 
     local procedure GetSeminarSetup()
     begin
@@ -271,6 +311,12 @@ table 50011 "Seminar Registration Header"
         SeminarSetup.TestField("Seminar Registration Nos.");
     end;
 
+    /// <summary>
+    /// ValidateNoCharges.
+    /// This procedure checks if there are any charges associated with the seminar registration.
+    /// If there are charges with a total amount not equal to zero,
+    /// it raises an error indicating that the registration cannot be deleted.
+    /// </summary>
     local procedure ValidateNoCharges()
     var
         SeminarCharge: Record "Seminar Charge";
@@ -284,7 +330,7 @@ table 50011 "Seminar Registration Header"
                 Error(CannotDeleteWithChargesErr,
                       SeminarCharge.TableCaption());
         end;
-    end;   
+    end;
 
     local procedure DeleteRelatedRecords()
     var
@@ -292,15 +338,30 @@ table 50011 "Seminar Registration Header"
         SeminarComment: Record "Seminar Comment Line";
 
     begin
-         // delete all lines related to this header
+        // delete all lines related to this header
         SeminarRegLine.SetRange("Document No.", "No.");
         if not SeminarRegLine.IsEmpty() then
             SeminarRegLine.DeleteAll(true);
 
         // delete all related records in the Seminar Comment table
         SeminarComment.SetRange("Document Type", SeminarComment."Document Type"::"Seminar Registration");
-        SeminarComment.SetRange("No.", "No.");
+        SeminarComment.SetRange("Document No.", "No.");
         if not SeminarComment.IsEmpty() then
-            SeminarComment.DeleteAll(true); 
-    end; 
+            SeminarComment.DeleteAll(true);
+    end;
+
+    // 'SetRange' is a cumulative filter, meaning that it adds to any existing filters on the record.
+    // set a filter on the starting date field to check records where starting data falls within the same date range as the seminar registration
+    // set another flter on the ending date field to check records where ending date falls within the same date range as the seminar registration 
+    local procedure CheckRoomAvailability()
+    var
+        SeminarRoom: Record Resource;
+        SeminarRegHeader: Record "Seminar Registration Header";
+    begin
+        SeminarRegHeader.SetRange("Room No.", "Room No.");
+        SeminarRegHeader.SetRange("Starting Date", "Starting Date", "Ending Date");
+        SeminarRegHeader.SetRange("Ending Date", "Starting Date", "Ending Date");
+        if SeminarRegHeader.FindFirst() then
+            Error('The room %1 is already booked for the period from %2 to %3.', "Room No.", Format("Starting Date"), Format("Ending Date"));
+    end;
 }

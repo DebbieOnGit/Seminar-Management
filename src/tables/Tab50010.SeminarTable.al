@@ -9,6 +9,7 @@ table 50010 "Seminar"
         field(1; "No."; Code[20])
         {
             Caption = 'No.';
+            NotBlank = true;
 
             trigger OnValidate()
             
@@ -30,10 +31,10 @@ table 50010 "Seminar"
         {
             Caption = 'Name';
         }
-        field(4; "Seminar Duration"; Decimal)
+        field(4; "Seminar Duration"; Integer)
         {
             Caption = 'Seminar Duration';
-            DecimalPlaces = 0 : 1;
+            MinValue = 1;
         }
         field(5; "Minimum Participants"; Integer)
         {
@@ -43,6 +44,13 @@ table 50010 "Seminar"
         field(6; "Maximum Participants"; Integer)
         {
             Caption = 'Maximum Participants';
+            MinValue = 1;
+            trigger OnValidate()
+            
+            begin
+                if "Maximum Participants" < "Minimum Participants" then
+                    Error('Maximum participants must be greater than minimum participants.');
+            end;
         }
         field(7; "Search Name"; Code[50])
         {
@@ -69,6 +77,7 @@ table 50010 "Seminar"
             Caption = 'Seminar Price';
             AutoFormatType = 1;
             MinValue = 0;
+            NotBlank = true;
         }
         field(12; "Gen. Prod. Posting Group"; Code[10])
         {
@@ -96,6 +105,11 @@ table 50010 "Seminar"
         NoSeries: Codeunit "No. Series";
         SetupRead: Boolean;
     
+    trigger OnModify()
+
+    begin
+        "Last Date Modified" := Today();
+    end;
     trigger OnInsert()
     begin
         if "No." = '' then begin

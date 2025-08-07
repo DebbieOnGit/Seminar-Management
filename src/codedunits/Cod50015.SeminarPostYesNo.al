@@ -16,7 +16,7 @@ codeunit 50015 "Seminar-Post-Yes/No"
         StatusValidator.CanPost(SeminarHeader.Status);
 
         //Run posting
-        //SeminarPost.
+        SeminarPost.PostSeminarRegistration(SeminarHeader);
         Message('Seminar registration %1 has been posted successfully.', SeminarHeader."No.");
     end;
 }
